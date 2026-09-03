@@ -112,7 +112,18 @@ function createEntry(options: SidebarEntryOptions): { entry: HTMLButtonElement; 
 function placeEntry(root: HTMLElement, entry: HTMLButtonElement, options: SidebarEntryOptions): boolean {
   const button = newSessionButton(root)
   if (button === undefined) return false
-  if (entry.parentElement !== root) {
+  const row = button.closest('[class*="logoRow"]')
+  const base = (row !== null && row.parentElement === root) ? row : button
+  // Insert into the container that actually owns the New Session row. Classic
+  // shells keep the row and its siblings as direct children of the sidebar
+  // root, so the resolved anchor is a child of the root and inserting on the
+  // root works. Newer shells (tauri panel) nest the row one level deeper in an
+  // intermediate actions container; the anchor is a child of that container,
+  // and inserting on the root would throw a DOM NotFoundError and tear down
+  // the mount. Resolve the container from the base row itself so both layouts
+  // insert before the correct sibling.
+  const container = base.parentElement instanceof HTMLElement ? base.parentElement : root
+  if (entry.parentElement !== container) {
     // Position relative to the family block (entries injected by sibling
     // plugins), never relative to transient logoRow geometry: every family
     // plugin that self-heals during a re-render then lands in the same
@@ -120,15 +131,19 @@ function placeEntry(root: HTMLElement, entry: HTMLButtonElement, options: Sideba
     // observer callback order or of shell wrapper changes. There is no
     // append-to-end fallback: appending at the end would randomly reorder
     // the block after a shell re-render.
-    const row = button.closest('[class*="logoRow"]')
-    const base = (row !== null && row.parentElement === root) ? row : button
-    const family = Array.from(root.children).filter(
+    const family = Array.from(container.children).filter(
       (el): el is HTMLElement => el instanceof HTMLElement && el.matches(options.familySelectors.join(', ')),
     )
     const anchor = options.position === 'before'
       ? (family.length > 0 ? family[0] : base.nextElementSibling)
       : (family.length > 0 ? family[family.length - 1]!.nextElementSibling : base.nextElementSibling)
-    root.insertBefore(entry, anchor)
+    // A placement mismatch must never tear down the mount: report false and
+    // let the observer retry on the next shell mutation.
+    try {
+      container.insertBefore(entry, anchor)
+    } catch {
+      return false
+    }
   }
   return true
 }
