@@ -7948,7 +7948,7 @@ window.__ModuleLoader__.load({
 		}
 		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
 		function newSessionButton$2(root) {
-			const nested = root.querySelector("button[class*=\"newSession\"]");
+			const nested = root.querySelector("button[class*=\"newSession\"], button[class*=\"new-session\"]");
 			if (nested !== null) return nested;
 			for (const child of root.children) if (child.tagName === "BUTTON") return child;
 		}
@@ -7980,16 +7980,24 @@ window.__ModuleLoader__.load({
 				applyLabel
 			};
 		}
-		/** Re-insert the entry after the New Session row (before the browser region). */
+		/**
+		* Re-insert the entry after the New Session row (before the browser region).
+		* The insertion container is the anchor's actual parent, not the sidebar
+		* root: 0.1.3 shells nest the button inside the panel-area block, and
+		* insertBefore only accepts anchors that are children of the container.
+		* Legacy shells have the button as a direct child of the root, so host
+		* resolves to the root and behavior is unchanged.
+		*/
 		function placeEntry$2(root, entry, options) {
 			const button = newSessionButton$2(root);
 			if (button === void 0) return false;
-			if (entry.parentElement !== root) {
-				const row = button.closest("[class*=\"logoRow\"]");
-				const base = row !== null && row.parentElement === root ? row : button;
-				const family = Array.from(root.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
+			const row = button.closest("[class*=\"logoRow\"], [class*=\"logo-row\"]");
+			const base = row !== null && row.parentElement === root ? row : button;
+			const host = base.parentElement === root ? root : base.parentElement ?? root;
+			if (entry.parentElement !== host) {
+				const family = Array.from(host.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
 				const anchor = options.position === "before" ? family.length > 0 ? family[0] : base.nextElementSibling : family.length > 0 ? family[family.length - 1].nextElementSibling : base.nextElementSibling;
-				root.insertBefore(entry, anchor);
+				host.insertBefore(entry, anchor);
 			}
 			return true;
 		}
@@ -36328,7 +36336,7 @@ window.__ModuleLoader__.load({
 		}
 		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
 		function newSessionButton$1(root) {
-			const nested = root.querySelector("button[class*=\"newSession\"]");
+			const nested = root.querySelector("button[class*=\"newSession\"], button[class*=\"new-session\"]");
 			if (nested !== null) return nested;
 			for (const child of root.children) if (child.tagName === "BUTTON") return child;
 		}
@@ -36360,16 +36368,24 @@ window.__ModuleLoader__.load({
 				applyLabel
 			};
 		}
-		/** Re-insert the entry after the New Session row (before the browser region). */
+		/**
+		* Re-insert the entry after the New Session row (before the browser region).
+		* The insertion container is the anchor's actual parent, not the sidebar
+		* root: 0.1.3 shells nest the button inside the panel-area block, and
+		* insertBefore only accepts anchors that are children of the container.
+		* Legacy shells have the button as a direct child of the root, so host
+		* resolves to the root and behavior is unchanged.
+		*/
 		function placeEntry$1(root, entry, options) {
 			const button = newSessionButton$1(root);
 			if (button === void 0) return false;
-			if (entry.parentElement !== root) {
-				const row = button.closest("[class*=\"logoRow\"]");
-				const base = row !== null && row.parentElement === root ? row : button;
-				const family = Array.from(root.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
+			const row = button.closest("[class*=\"logoRow\"], [class*=\"logo-row\"]");
+			const base = row !== null && row.parentElement === root ? row : button;
+			const host = base.parentElement === root ? root : base.parentElement ?? root;
+			if (entry.parentElement !== host) {
+				const family = Array.from(host.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
 				const anchor = options.position === "before" ? family.length > 0 ? family[0] : base.nextElementSibling : family.length > 0 ? family[family.length - 1].nextElementSibling : base.nextElementSibling;
-				root.insertBefore(entry, anchor);
+				host.insertBefore(entry, anchor);
 			}
 			return true;
 		}
@@ -39777,7 +39793,7 @@ window.__ModuleLoader__.load({
 		}
 		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
 		function newSessionButton(root) {
-			const nested = root.querySelector("button[class*=\"newSession\"]");
+			const nested = root.querySelector("button[class*=\"newSession\"], button[class*=\"new-session\"]");
 			if (nested !== null) return nested;
 			for (const child of root.children) if (child.tagName === "BUTTON") return child;
 		}
@@ -39809,16 +39825,24 @@ window.__ModuleLoader__.load({
 				applyLabel
 			};
 		}
-		/** Re-insert the entry after the New Session row (before the browser region). */
+		/**
+		* Re-insert the entry after the New Session row (before the browser region).
+		* The insertion container is the anchor's actual parent, not the sidebar
+		* root: 0.1.3 shells nest the button inside the panel-area block, and
+		* insertBefore only accepts anchors that are children of the container.
+		* Legacy shells have the button as a direct child of the root, so host
+		* resolves to the root and behavior is unchanged.
+		*/
 		function placeEntry(root, entry, options) {
 			const button = newSessionButton(root);
 			if (button === void 0) return false;
-			if (entry.parentElement !== root) {
-				const row = button.closest("[class*=\"logoRow\"]");
-				const base = row !== null && row.parentElement === root ? row : button;
-				const family = Array.from(root.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
+			const row = button.closest("[class*=\"logoRow\"], [class*=\"logo-row\"]");
+			const base = row !== null && row.parentElement === root ? row : button;
+			const host = base.parentElement === root ? root : base.parentElement ?? root;
+			if (entry.parentElement !== host) {
+				const family = Array.from(host.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
 				const anchor = options.position === "before" ? family.length > 0 ? family[0] : base.nextElementSibling : family.length > 0 ? family[family.length - 1].nextElementSibling : base.nextElementSibling;
-				root.insertBefore(entry, anchor);
+				host.insertBefore(entry, anchor);
 			}
 			return true;
 		}
@@ -50746,9 +50770,9 @@ window.__ModuleLoader__.load({
 				note: "column resize handle"
 			},
 			{
-				selector: "button[class*=\"newSession\"]",
+				selector: "button[class*=\"newSession\"], button[class*=\"new-session\"]",
 				attrs: [["data-dsh-part", "new-session"]],
-				note: "sidebar new-session action (compat seam shields skins from localized labels)"
+				note: "sidebar new-session action, both shell class generations (camelCase 0.1.2 and BEM 0.1.3; compat seam shields skins from localized labels)"
 			},
 			{
 				selector: "[data-dsh-taskboard-view], [data-dsh-taskboard-board], [data-dsh-taskboard-entry]",
