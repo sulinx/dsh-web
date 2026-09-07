@@ -3843,9 +3843,9 @@ window.__ModuleLoader__.load({
 				note: "column resize handle"
 			},
 			{
-				selector: "button[class*=\"newSession\"]",
+				selector: "button[class*=\"newSession\"], button[class*=\"new-session\"]",
 				attrs: [["data-dsh-part", "new-session"]],
-				note: "sidebar new-session action (compat seam shields skins from localized labels)"
+				note: "sidebar new-session action, both shell class generations (camelCase 0.1.2 and BEM 0.1.3; compat seam shields skins from localized labels)"
 			},
 			{
 				selector: "[data-dsh-taskboard-view], [data-dsh-taskboard-board], [data-dsh-taskboard-entry]",
