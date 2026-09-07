@@ -27,6 +27,16 @@ interface FakeElement {
   firstElementChild: FakeElement | undefined
 }
 
+/** Depth-first search for a BUTTON descendant whose class list contains one of the needles. */
+function findButtonByClass(el: FakeElement, needles: string[]): FakeElement | null {
+  for (const child of el.children) {
+    if (child.tagName === 'BUTTON' && needles.some((n) => child.className.includes(n))) return child
+    const found = findButtonByClass(child, needles)
+    if (found !== null) return found
+  }
+  return null
+}
+
 function makeElement(tag: string, children: FakeElement[] = []): FakeElement {
   const listeners = new Map<string, () => void>()
   const element: FakeElement = {
@@ -59,10 +69,27 @@ function makeElement(tag: string, children: FakeElement[] = []): FakeElement {
     remove() { element.removed = true },
     addEventListener(name, fn) { listeners.set(name, fn) },
     click() { listeners.get('click')?.() },
-    closest() { return null },
+    closest(selector) {
+      // Only the logo-row selector shape is exercised by sidebar-entry-core;
+      // walk up while any class-list substring of the selector is present.
+      const needles = /logoRow|logo-row/.test(selector) ? ['logoRow', 'logo-row'] : null
+      let cur: FakeElement | undefined = element.parentElement
+      while (cur !== undefined) {
+        // Capture: TS does not keep the while-condition narrowing across the
+        // .some callback, where `cur` could theoretically be reassigned.
+        const node = cur
+        if (needles !== null && needles.some((n) => node.className.includes(n))) return node
+        cur = node.parentElement
+      }
+      return null
+    },
     matches() { return false },
     contains() { return false },
-    querySelector() { return null },
+    querySelector(selector) {
+      if (selector === 'button[class*="newSession"], button[class*="new-session"]') return findButtonByClass(element, ['newSession', 'new-session'])
+      if (selector === 'button[class*="newSession"]') return findButtonByClass(element, ['newSession'])
+      return null
+    },
     get firstElementChild() { return element.children[0] },
   }
   return element
@@ -84,7 +111,7 @@ function stubDocument(existingRow: boolean, created: FakeElement[]) {
     querySelector: (selector: string) => {
       if (selector === '[data-dsh-x-entry]') return existingRow ? {} : null
       if (selector === '[data-pane="sidebar"], [class*="sidebarCol"]') return column
-      if (selector === 'button[class*="newSession"]') return newSession
+      if (selector === 'button[class*="newSession"], button[class*="new-session"]') return newSession
       return null
     },
     createElement: () => {
@@ -135,6 +162,48 @@ describe('shared sidebar-entry core', () => {
     expect(toggled).toBe(1)
     dispose()
     expect(entry!.removed).toBe(true)
+  })
+
+  it('mounts into the new-session button parent host on the 0.1.3 BEM shell (nested button)', () => {
+    // harness 0.1.3 tauri shell geometry: sidebar column (hash css module,
+    // keeps the "sidebarCol" substring) > panel root (dshp-panel) >
+    // panel-area block > new-session button (BEM class
+    // dshp-panel__new-session). The button is no longer a direct child of
+    // the sidebar root, and the logo row (dshp-panel__logo-row) is a
+    // sibling block, not an ancestor.
+    newSession = makeElement('button')
+    newSession.className = 'dshp-panel__menu-item dshp-panel__new-session'
+    const panelArea = makeElement('div', [newSession])
+    panelArea.className = 'dshp-panel__panel-area'
+    root = makeElement('div', [panelArea])
+    root.className = 'dshp-panel'
+    column = makeElement('div', [root])
+    column.className = 'xP0Bd7a_sidebarCol'
+    // makeElement does not link parentElement for constructor children; the
+    // core resolves the insertion host through the button's parentElement.
+    newSession.parentElement = panelArea
+    panelArea.parentElement = root
+    root.parentElement = column
+    let toggled = 0
+    const created: FakeElement[] = []
+    stubDocument(false, created)
+    const dispose = mountSidebarEntry(options({
+      css: { entry: 'entry-css', entryIcon: 'icon-css', entryLabel: 'label-css' },
+      onToggle: () => { toggled += 1 },
+    }))
+    const entry = created[0]!
+    // sidebarRoot falls back to column.firstElementChild (the panel root);
+    // the BEM button is found through the combined selector; the entry is
+    // inserted into the button's actual parent (panel-area), after the
+    // button, not into the sidebar root.
+    expect(entry.parentElement).toBe(panelArea)
+    expect(panelArea.children[0]).toBe(newSession)
+    expect(panelArea.children[1]).toBe(entry)
+    expect(root.children).toHaveLength(1)
+    entry.click()
+    expect(toggled).toBe(1)
+    dispose()
+    expect(entry.removed).toBe(true)
   })
 
   it('outputs the L2 semantic attributes only when the plugin option is set (#506)', () => {

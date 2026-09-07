@@ -105,6 +105,18 @@ describe('semantic adapter', () => {
     adapter.stop()
   })
 
+  it('stamps the new-session part on both shell class generations (camelCase and BEM)', () => {
+    document.body.innerHTML = `
+      <button class="shell_newSession_hash" aria-label="新会话"></button>
+      <button class="dshp-panel__menu-item dshp-panel__new-session" aria-label="New session"></button>
+    `
+    const adapter = createSemanticAdapter(document)
+    adapter.start()
+    expect(document.querySelector('button[aria-label="新会话"]')!.getAttribute('data-dsh-part')).toBe('new-session')
+    expect(document.querySelector('button[aria-label="New session"]')!.getAttribute('data-dsh-part')).toBe('new-session')
+    adapter.stop()
+  })
+
   it('tags plugin roots', () => {
     document.body.innerHTML = '<div data-dsh-ssh-view></div>'
     const adapter = createSemanticAdapter(document)

@@ -74,7 +74,9 @@ function sidebarRoot(): HTMLElement | undefined {
 
 /** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
 function newSessionButton(root: HTMLElement): HTMLButtonElement | undefined {
-  const nested = root.querySelector<HTMLButtonElement>('button[class*="newSession"]')
+  // Both shell class generations: the 0.1.2 camelCase css-module classes and
+  // the 0.1.3 BEM classes (dshp-panel__new-session).
+  const nested = root.querySelector<HTMLButtonElement>('button[class*="newSession"], button[class*="new-session"]')
   if (nested !== null) return nested
   for (const child of root.children) {
     if (child.tagName === 'BUTTON') return child as HTMLButtonElement
@@ -108,11 +110,21 @@ function createEntry(options: SidebarEntryOptions): { entry: HTMLButtonElement; 
   return { entry, applyLabel }
 }
 
-/** Re-insert the entry after the New Session row (before the browser region). */
+/**
+ * Re-insert the entry after the New Session row (before the browser region).
+ * The insertion container is the anchor's actual parent, not the sidebar
+ * root: 0.1.3 shells nest the button inside the panel-area block, and
+ * insertBefore only accepts anchors that are children of the container.
+ * Legacy shells have the button as a direct child of the root, so host
+ * resolves to the root and behavior is unchanged.
+ */
 function placeEntry(root: HTMLElement, entry: HTMLButtonElement, options: SidebarEntryOptions): boolean {
   const button = newSessionButton(root)
   if (button === undefined) return false
-  if (entry.parentElement !== root) {
+  const row = button.closest('[class*="logoRow"], [class*="logo-row"]')
+  const base = (row !== null && row.parentElement === root) ? row : button
+  const host = base.parentElement === root ? root : (base.parentElement ?? root)
+  if (entry.parentElement !== host) {
     // Position relative to the family block (entries injected by sibling
     // plugins), never relative to transient logoRow geometry: every family
     // plugin that self-heals during a re-render then lands in the same
@@ -120,15 +132,13 @@ function placeEntry(root: HTMLElement, entry: HTMLButtonElement, options: Sideba
     // observer callback order or of shell wrapper changes. There is no
     // append-to-end fallback: appending at the end would randomly reorder
     // the block after a shell re-render.
-    const row = button.closest('[class*="logoRow"]')
-    const base = (row !== null && row.parentElement === root) ? row : button
-    const family = Array.from(root.children).filter(
+    const family = Array.from(host.children).filter(
       (el): el is HTMLElement => el instanceof HTMLElement && el.matches(options.familySelectors.join(', ')),
     )
     const anchor = options.position === 'before'
       ? (family.length > 0 ? family[0] : base.nextElementSibling)
       : (family.length > 0 ? family[family.length - 1]!.nextElementSibling : base.nextElementSibling)
-    root.insertBefore(entry, anchor)
+    host.insertBefore(entry, anchor)
   }
   return true
 }
